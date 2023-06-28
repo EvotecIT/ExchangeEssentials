@@ -161,12 +161,14 @@
         $TimeLogPermissions = Start-TimeLog
         if ($CacheType[$Mailbox.Alias] -eq 'Local') {
             try {
+                Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Local"
                 $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-LocalMailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
             }
         } else {
             try {
+                Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Online"
                 $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-MailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
@@ -176,12 +178,14 @@
         $TimeLogRecipient = Start-TimeLog
         if ($CacheType[$Mailbox.Alias] -eq 'Local') {
             try {
+                Write-Verbose -Message "Get-MyMailbox - Getting MailboxADPermissions for $($Mailbox.Alias) - Local"
                 $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions = Get-LocalADPermission -Identity $Mailbox.Identity -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxADPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
             }
         } else {
             try {
+                Write-Verbose -Message "Get-MyMailbox - Getting MailboxRecipientPermissions for $($Mailbox.Alias) - Online"
                 $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions = Get-RecipientPermission -Identity $Mailbox.Alias -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxRecipientPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
@@ -190,7 +194,6 @@
         $TimeLogRecipientEnd = Stop-TimeLog -Time $TimeLogRecipient
         $TImeLogStats = Start-TimeLog
         if ($IncludeStatistics) {
-
             if ($CacheType[$Mailbox.Alias] -eq 'Local') {
                 $CacheMailbox[$Mailbox.Alias]['Statistics'] = Get-LocalMailboxStatistics -Identity $Mailbox.Alias
             } else {
@@ -214,7 +217,7 @@
         foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxPermissions) {
             if ($Permission.Deny -eq $false) {
                 if ($Permission.User -ne 'NT AUTHORITY\SELF') {
-                    if ($Local -and $CacheType[$Mailbox.Alias] -eq 'Local') {
+                    if ($CacheType[$Mailbox.Alias] -eq 'Local') {
                         $UserSplit = $Permission.User.Split("\")
                         $CurrentUser = $UserSplit[1]
                     } else {
@@ -240,7 +243,7 @@
             }
         }
         foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions) {
-            if ($Local -and $CacheType[$Mailbox.Alias] -eq 'Local') {
+            if ($CacheType[$Mailbox.Alias] -eq 'Local') {
                 if ($Permission.Deny -eq $false -and $Permission.Inherited -eq $false) {
                     if ($Permission.User -ne 'NT AUTHORITY\SELF') {
                         $UserSplit = $Permission.User.Split("\")
@@ -307,9 +310,9 @@
         $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
         Write-Verbose -Message "Processing Mailbox $Count/$($Mailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName) - [$TimeLogPermissionsEnd][$TimeLogRecipientEnd][$TimeLogStatsEnd][$TimeLogProcessingEnd]"
         Write-Verbose -Message "Processing Mailbox $Count/$($Mailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName) - [$EndTimeLog]"
-        if ($Count -ge $LimitProcessing) {
-            break
-        }
+        # if ($Count -ge $LimitProcessing) {
+        #     break
+        # }
     }
     foreach ($Alias in $ReversedPermissions.Keys) {
         if ($CacheMailbox[$Alias]) {
@@ -319,7 +322,7 @@
         }
     }
     $Count = 0
-    $Output = foreach ($Mailbox in $FilterdMailboxes) {
+    foreach ($Mailbox in $FilterdMailboxes) {
         $Count++
         Write-Verbose -Message "Processing Mailbox $Count/$($FilterdMailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName)"
         if ($Mailbox.ForwardingAddress) {
@@ -341,7 +344,7 @@
                 }
             } else {
                 $ForwardAddress = $Mailbox.ForwardingAddress
-                $IsForward = 'Unknown'
+                $IsForward = $true
             }
             $ForwardingType = 'Contact'
         } elseif ($Mailbox.ForwardingSmtpAddress) {
@@ -349,7 +352,8 @@
             if ($ForwardAddress) {
                 $IsForward = $true
             } else {
-                $IsForward = $false
+                # this shouldn't happen
+                $IsForward = 'Unknown'
             }
             $ForwardingType = 'SmtpAddress'
         } else {
@@ -388,7 +392,7 @@
             ForwardingEnabled             = $IsForward
             ForwardingStatus              = $ForwardingStatus
             ForwardingType                = $ForwardingType
-            ForwardAddress                = $ForwardAddress
+            ForwardingAddress             = $ForwardAddress
 
             FullAccess                    = $CacheMailbox[$Mailbox.Alias].FullAccess
             SendAs                        = $CacheMailbox[$Mailbox.Alias].SendAs
@@ -399,7 +403,6 @@
             WhenCreated                   = $Mailbox.WhenCreated
             WhenMailboxCreated            = $Mailbox.WhenMailboxCreated
             HiddenFromAddressListsEnabled = $Mailbox.HiddenFromAddressListsEnabled
-
             #RecipientType                 = $Mailbox.RecipientType
         }
         if ($IncludeStatistics) {
@@ -447,9 +450,12 @@
         #      break
         # }
     }
-    @{
-        Output =  $Output
-        CacheMailbox = $CacheMailbox
-        ReversedPermissions = $ReversedPermissions
-    }
+
+    $Global:ReversePermissions = $ReversedPermissions
+    $Global:CacheMailboxTemp = $CacheMailbox
+    # @{
+    #     Output              = $Output
+    #     CacheMailbox        = $CacheMailbox
+    #     ReversedPermissions = $ReversedPermissions
+    # }
 }
