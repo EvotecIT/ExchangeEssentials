@@ -88,7 +88,6 @@
     if (-not $Global:Contacts) {
         Write-Verbose -Message 'Get-MyMailbox - Getting Mail Contacts'
         try {
-
             [Array] $Global:Contacts = Get-MailContact -ResultSize Unlimited -ErrorAction Stop
         } catch {
             Write-Warning -Message "Get-MyMailbox - Unable to get Mail Contacts. Error: $($_.Exception.Message.Replace("`r`n", " "))"
@@ -365,6 +364,7 @@
             if ($ForwardAddress -like "*@*") {
                 $SplitAddress = $ForwardAddress -split "@"
                 $DomainName = $SplitAddress[1]
+                $DomainName = $DomainName.Trim()
                 if ($CacheRemoteDomains[$DomainName]) {
                     $ForwardingStatus = "Internal"
                 } else {
