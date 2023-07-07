@@ -87,6 +87,7 @@
     }
 
     if (-not $RecipientPermissions) {
+        Write-Verbose -Message 'Get-MyMailbox - Getting RecipientPermission'
         try {
             $RecipientPermissions = Get-EXORecipientPermission -ResultSize Unlimited -ErrorAction Stop
         } catch {
