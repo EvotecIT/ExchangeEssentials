@@ -14,6 +14,7 @@
     PrivateData            = @{
         PSData = @{
             Tags                       = @('Windows')
+            ProjectUri                 = 'https://github.com/EvotecIT/ExchangeEssentials'
             ExternalModuleDependencies = @('ActiveDirectory')
         }
     }

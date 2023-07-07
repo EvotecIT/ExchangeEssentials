@@ -14,7 +14,7 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
         PowerShellVersion      = '5.1'
         Tags                   = @('Windows')
         IconUri                = ''
-        #ProjectUri             = 'https://github.com/EvotecIT/ExchangeEssentials'
+        ProjectUri             = 'https://github.com/EvotecIT/ExchangeEssentials'
         DotNetFrameworkVersion = '4.5.2'
     }
     New-ConfigurationManifest @Manifest
