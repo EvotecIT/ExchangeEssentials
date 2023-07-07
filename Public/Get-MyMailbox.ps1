@@ -21,13 +21,13 @@
 
     Write-Verbose -Message 'Get-MyMailbox - Getting Mailboxes'
 
-    if (-not $Global:Mailboxes) {
-        $Global:Mailboxes = @(
+    if (-not $Mailboxes) {
+        $Mailboxes = @(
             if ($Local) {
                 $TimeLog = Start-TimeLog
                 Write-Verbose -Message 'Get-MyMailbox - Getting Mailboxes (Local)'
                 try {
-                    $Global:LocalMailboxes = Get-LocalMailbox -ResultSize unlimited -ErrorAction Stop
+                    $LocalMailboxes = Get-LocalMailbox -ResultSize unlimited -ErrorAction Stop
                     $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
                     Write-Verbose -Message "Get-MyMailbox - Getting Mailboxes (Local) took $($EndTimeLog)"
                 } catch {
@@ -37,7 +37,7 @@
                     return
                 }
                 #  $TimeLog = Start-TimeLog
-                foreach ($Mailbox in $Global:LocalMailboxes) {
+                foreach ($Mailbox in $LocalMailboxes) {
                     $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
                     $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
                     $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
@@ -50,7 +50,7 @@
             Write-Verbose -Message 'Get-MyMailbox - Getting Mailboxes (Online)'
             $TimeLog = Start-TimeLog
             try {
-                $Global:OnlineMailboxes = Get-EXOMailbox -Properties GrantSendOnBehalfTo, ForwardingSmtpAddress, RecipientTypeDetails, SamAccountName, WhenCreated, WhenMailboxCreated, HiddenFromAddressListsEnabled, ForwardingAddress -ResultSize unlimited -ErrorAction Stop
+                $OnlineMailboxes = Get-EXOMailbox -Properties GrantSendOnBehalfTo, ForwardingSmtpAddress, RecipientTypeDetails, SamAccountName, WhenCreated, WhenMailboxCreated, HiddenFromAddressListsEnabled, ForwardingAddress -ResultSize unlimited -ErrorAction Stop
                 $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
                 Write-Verbose -Message "Get-MyMailbox - Getting Mailboxes (Online) took $($EndTimeLog) seconds"
             } catch {
@@ -60,7 +60,7 @@
                 return
             }
             #$TimeLog = Start-TimeLog
-            foreach ($Mailbox in $Global:OnlineMailboxes) {
+            foreach ($Mailbox in $OnlineMailboxes) {
                 $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
                 $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
                 $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
@@ -72,13 +72,13 @@
         )
     } else {
         Write-Verbose -Message 'Get-MyMailbox - Mailboxes already cached'
-        foreach ($Mailbox in $Global:LocalMailboxes) {
+        foreach ($Mailbox in $LocalMailboxes) {
             $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
             $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
             $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
             $CacheType[$Mailbox.Alias] = 'Local'
         }
-        foreach ($Mailbox in $Global:OnlineMailboxes) {
+        foreach ($Mailbox in $OnlineMailboxes) {
             $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
             $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
             $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
@@ -86,36 +86,36 @@
         }
     }
 
-    if (-not $Global:RecipientPermissions) {
+    if (-not $RecipientPermissions) {
         try {
-            $Global:RecipientPermissions = Get-EXORecipientPermission -ResultSize Unlimited -ErrorAction Stop
+            $RecipientPermissions = Get-EXORecipientPermission -ResultSize Unlimited -ErrorAction Stop
         } catch {
             Write-Warning -Message "Get-MyMailbox - Unable to get Recipient Permissions. Error: $($_.Exception.Message.Replace("`r`n", " "))"
             return
         }
     }
-    if (-not $Global:ContactsLocal) {
+    if (-not $ContactsLocal) {
         if ($Local) {
             Write-Verbose -Message 'Get-MyMailbox - Getting Local Mail Contacts'
             try {
-                [Array] $Global:ContactsLocal = Get-LocalMailContact -ResultSize Unlimited -ErrorAction Stop
+                [Array] $ContactsLocal = Get-LocalMailContact -ResultSize Unlimited -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get Local Mail Contacts. Error: $($_.Exception.Message.Replace("`r`n", " "))"
             }
         }
     }
-    if (-not $Global:Contacts) {
+    if (-not $Contacts) {
         Write-Verbose -Message 'Get-MyMailbox - Getting Mail Contacts'
         try {
-            [Array] $Global:Contacts = Get-MailContact -ResultSize Unlimited -ErrorAction Stop
+            [Array] $Contacts = Get-MailContact -ResultSize Unlimited -ErrorAction Stop
         } catch {
             Write-Warning -Message "Get-MyMailbox - Unable to get Mail Contacts. Error: $($_.Exception.Message.Replace("`r`n", " "))"
             return
         }
     }
-    if (-not $Global:RemoteDomains) {
+    if (-not $RemoteDomains) {
         try {
-            $Global:RemoteDomains = @(
+            $RemoteDomains = @(
                 Write-Verbose -Message 'Get-MyMailbox - Getting Remote Domains'
                 Get-RemoteDomain -ResultSize Unlimited -ErrorAction Stop
                 if ($Local) {
@@ -128,16 +128,16 @@
             return
         }
     }
-    foreach ($C in $Global:Contacts) {
+    foreach ($C in $Contacts) {
         $CacheContacts[$C.Identity] = $C
     }
-    foreach ($C in $Global:ContactsLocal) {
+    foreach ($C in $ContactsLocal) {
         $CacheContactsLocal[$C.Identity] = $C
     }
-    foreach ($Domain in $Global:RemoteDomains) {
+    foreach ($Domain in $RemoteDomains) {
         $CacheRemoteDomains[$Domain.DomainName] = $Domain
     }
-    foreach ($RecipientPermission in $Global:RecipientPermissions) {
+    foreach ($RecipientPermission in $RecipientPermissions) {
         if ($RecipientPermission.Trustee -ne 'NT AUTHORITY\SELF') {
             if (-not $CacheRecipientPermissions[$RecipientPermission.Identity]) {
                 $CacheRecipientPermissions[$RecipientPermission.Identity] = [System.Collections.Generic.List[PSCustomobject]]::new()
@@ -148,8 +148,8 @@
     if ($IncludeCAS) {
         Write-Verbose -Message 'Get-MyMailbox - Getting CAS Mailboxes'
         try {
-            if (-not $Global:CasMailboxes) {
-                $Global:CasMailboxes = @(
+            if (-not $CasMailboxes) {
+                $CasMailboxes = @(
                     Write-Verbose -Message 'Get-MyMailbox - Getting CAS Mailboxes (Online)'
                     Get-CasMailbox -ResultSize unlimited -ErrorAction Stop
                     if ($Local) {
@@ -162,7 +162,7 @@
             Write-Warning -Message "Get-MyMailbox - Unable to get CasMailboxes. Error: $($_.Exception.Message.Replace("`r`n", " "))"
             return
         }
-        foreach ($Mailbox in $Global:CasMailboxes) {
+        foreach ($Mailbox in $CasMailboxes) {
             $CacheCasMailbox[$Mailbox.Identity] = $Mailbox
         }
     }
@@ -170,10 +170,10 @@
 
     $FilterdMailboxes = @(
         if ($LimitProcessing) {
-            $Global:LocalMailboxes | Select-Object -First $LimitProcessing
-            $Global:OnlineMailboxes | Select-Object -First $LimitProcessing
+            $LocalMailboxes | Select-Object -First $LimitProcessing
+            $OnlineMailboxes | Select-Object -First $LimitProcessing
         } else {
-            $Global:Mailboxes
+            $Mailboxes
         }
     )
     foreach ($Mailbox in $FilterdMailboxes) {
@@ -338,9 +338,6 @@
         $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
         Write-Verbose -Message "Processing Mailbox $Count/$($Mailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName) - [$TimeLogPermissionsEnd][$TimeLogRecipientEnd][$TimeLogStatsEnd][$TimeLogProcessingEnd]"
         Write-Verbose -Message "Processing Mailbox $Count/$($Mailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName) - [$EndTimeLog]"
-        # if ($Count -ge $LimitProcessing) {
-        #     break
-        # }
     }
     foreach ($Alias in $ReversedPermissions.Keys) {
         if ($CacheMailbox[$Alias]) {
@@ -416,8 +413,6 @@
             TypeDetails                   = $Mailbox.RecipientTypeDetails
             PrimarySmtpAddress            = $Mailbox.PrimarySmtpAddress
             SamAccountName                = $Mailbox.SamAccountName
-            #ExchangeUserAccountControl    = $Mailbox.ExchangeUserAccountControl
-            #ForwardingSmtpAddress      = $Mailbox.ForwardingSmtpAddress
             ForwardingEnabled             = $IsForward
             ForwardingStatus              = $ForwardingStatus
             ForwardingType                = $ForwardingType
@@ -432,7 +427,6 @@
             WhenCreated                   = $Mailbox.WhenCreated
             WhenMailboxCreated            = $Mailbox.WhenMailboxCreated
             HiddenFromAddressListsEnabled = $Mailbox.HiddenFromAddressListsEnabled
-            #RecipientType                 = $Mailbox.RecipientType
         }
         if ($IncludeStatistics) {
             #$User['LastUserAccessTime'] = $CacheMailbox[$Mailbox.Alias].Statistics.LastUserAccessTime
@@ -475,16 +469,5 @@
 
         $FinalOutput[$Mailbox.Alias] = $ConvertedUser
         $ConvertedUser
-        #  if ($Count -ge $LimitProcessing) {
-        #      break
-        # }
     }
-
-    #$Global:ReversePermissions = $ReversedPermissions
-    #$Global:CacheMailboxTemp = $CacheMailbox
-    # @{
-    #     Output              = $Output
-    #     CacheMailbox        = $CacheMailbox
-    #     ReversedPermissions = $ReversedPermissions
-    # }
 }
