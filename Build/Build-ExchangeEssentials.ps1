@@ -19,9 +19,26 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type ExternalModule -Name 'Microsoft.PowerShell.Utility'
     New-ConfigurationModule -Type RequiredModule -Name 'ExchangeOnlineManagement' -Version Latest -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword'
+    New-ConfigurationModule -Type ExternalModule -Name 'ActiveDirectory'
+    New-ConfigurationModuleSkip -IgnoreFunctionName @(
+        'Get-Mailbox'
+        'Get-CASMailbox'
+        'Get-MailboxPermission'
+        'Get-MailboxStatistics'
+        'Get-MailContact'
+        'Get-RecipientPermission'
+        'Get-RemoteDomain'
+        'Get-LocalMailboxStatistics'
+        'Get-LocalADPermission'
+        'Get-LocalCasMailbox'
+        'Get-LocalMailbox'
+        'Get-LocalMailboxPermission'
+        'Get-LocalMailContact'
+        'Get-LocalRemoteDomain'
+        'Get-ExoRecipientPermission'
+    ) -IgnoreModuleName 'Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility', 'Microsoft.WSMan.Management', 'NetTCPIP'
 
     $ConfigurationFormat = [ordered] @{
         RemoveComments                              = $false
@@ -67,7 +84,7 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
 
     New-ConfigurationImportModule -ImportSelf
 
-    New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '36A8A2D0E227D81A2D3B60DCE0CFCF23BEFC343B'
+    New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
 
     New-ConfigurationArtefact -Type Unpacked -Enable -Path "$PSScriptRoot\..\Artefacts\Unpacked" -ModulesPath "$PSScriptRoot\..\Artefacts\Unpacked\Modules" -RequiredModulesPath "$PSScriptRoot\..\Artefacts\Unpacked\Modules" -AddRequiredModules
     New-ConfigurationArtefact -Type Packed -Enable -Path "$PSScriptRoot\..\Artefacts\Packed" -ArtefactName '<ModuleName>.v<ModuleVersion>.zip'
