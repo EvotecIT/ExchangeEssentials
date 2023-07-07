@@ -14,13 +14,13 @@
     PrivateData            = @{
         PSData = @{
             Tags                       = @('Windows')
-            ExternalModuleDependencies = @('Microsoft.PowerShell.Utility')
+            ExternalModuleDependencies = @('ActiveDirectory')
         }
     }
     RequiredModules        = @(@{
             ModuleName    = 'ExchangeOnlineManagement'
-            ModuleVersion = '3.1.0'
+            ModuleVersion = '3.2.0'
             Guid          = 'b5eced50-afa4-455b-847a-d8fb64140a22'
-        }, 'Microsoft.PowerShell.Utility')
+        }, 'ActiveDirectory')
     RootModule             = 'ExchangeEssentials.psm1'
 }
