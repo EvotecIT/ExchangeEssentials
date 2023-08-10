@@ -7,9 +7,9 @@
     Copyright              = '(c) 2011 - 2023 Przemyslaw Klys @ Evotec. All rights reserved.'
     Description            = 'ExchangeEssentials'
     DotNetFrameworkVersion = '4.5.2'
-    FunctionsToExport      = 'Get-MyMailbox'
+    FunctionsToExport      = @('Get-MyMailbox', 'Get-MyMailboxProblems', 'Invoke-ExchangeEssentials')
     GUID                   = '0dd82757-4cac-4772-9821-1c8ccaebe50d'
-    ModuleVersion          = '0.1.0'
+    ModuleVersion          = '0.2.0'
     PowerShellVersion      = '5.1'
     PrivateData            = @{
         PSData = @{
