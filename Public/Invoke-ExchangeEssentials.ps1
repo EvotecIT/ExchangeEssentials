@@ -15,6 +15,9 @@
         ShowWarning = $ShowWarning.IsPresent
         HideSteps   = $HideSteps.IsPresent
     }
+
+    Write-Color '[i]', "[ExchangeEssentials] ", 'Version', ' [Informative] ', $Script:Reporting['Version'] -Color Yellow, DarkGray, Yellow, DarkGray, Magenta
+
     $Supported = [System.Collections.Generic.List[string]]::new()
     [Array] $NotSupported = foreach ($T in $Type) {
         if ($T -notin $Script:ExchangeEssentialsConfiguration.Keys ) {
