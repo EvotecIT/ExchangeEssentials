@@ -22,6 +22,10 @@
             ModuleName    = 'ExchangeOnlineManagement'
             ModuleVersion = '3.2.0'
             Guid          = 'b5eced50-afa4-455b-847a-d8fb64140a22'
+        }, @{
+            ModuleName    = 'PSWriteHTML'
+            ModuleVersion = '1.1.0'
+            Guid          = 'a7bdf640-f5cb-4acf-9de0-365b322d245c'
         }, 'ActiveDirectory')
     RootModule             = 'ExchangeEssentials.psm1'
 }
