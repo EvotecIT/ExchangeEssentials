@@ -19,7 +19,7 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type RequiredModule -Name 'ExchangeOnlineManagement' -Version Latest -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'ExchangeOnlineManagement', 'PSWriteHTML' -Version Latest -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword'
     New-ConfigurationModule -Type ExternalModule -Name 'ActiveDirectory'
     New-ConfigurationModuleSkip -IgnoreFunctionName @(
@@ -86,8 +86,31 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
 
     New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
 
-    New-ConfigurationArtefact -Type Unpacked -Enable -Path "$PSScriptRoot\..\Artefacts\Unpacked" -ModulesPath "$PSScriptRoot\..\Artefacts\Unpacked\Modules" -RequiredModulesPath "$PSScriptRoot\..\Artefacts\Unpacked\Modules" -AddRequiredModules
-    New-ConfigurationArtefact -Type Packed -Enable -Path "$PSScriptRoot\..\Artefacts\Packed" -ArtefactName '<ModuleName>.v<ModuleVersion>.zip'
+    $newConfigurationArtefactSplat = @{
+        Type                = 'Unpacked'
+        Enable              = $true
+        Path                = "$PSScriptRoot\..\Artefacts\Unpacked"
+        ModulesPath         = "$PSScriptRoot\..\Artefacts\Unpacked\Modules"
+        RequiredModulesPath = "$PSScriptRoot\..\Artefacts\Unpacked\Modules"
+        AddRequiredModules  = $true
+        CopyFiles           = @{
+            "Examples\PublishingExample\Example-ExchangeEssentials.ps1" = "RunMe.ps1"
+        }
+    }
+    New-ConfigurationArtefact @newConfigurationArtefactSplat -CopyFilesRelative
+    $newConfigurationArtefactSplat = @{
+        Type                = 'Packed'
+        Enable              = $true
+        Path                = "$PSScriptRoot\..\Artefacts\Packed"
+        ModulesPath         = "$PSScriptRoot\..\Artefacts\Packed\Modules"
+        RequiredModulesPath = "$PSScriptRoot\..\Artefacts\Packed\Modules"
+        AddRequiredModules  = $true
+        CopyFiles           = @{
+            "Examples\PublishingExample\Example-ExchangeEssentials.ps1" = "RunMe.ps1"
+        }
+        ArtefactName        = '<ModuleName>.v<ModuleVersion>.zip'
+    }
+    New-ConfigurationArtefact @newConfigurationArtefactSplat
 
     # global options for publishing to github/psgallery
     #New-ConfigurationPublish -Type PowerShellGallery -FilePath 'C:\Support\Important\PowerShellGalleryAPI.txt' -Enabled:$true
