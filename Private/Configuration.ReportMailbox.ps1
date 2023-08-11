@@ -14,13 +14,8 @@
 
     }
     Solution   = {
+        New-HTMLTable -DataTable $Script:Reporting['Mailbox']['Data'] -Filtering {
 
-        if ($Script:Reporting['Mailbox']['Data'] -is [System.Collections.IDictionary]) {
-            New-HTMLTabPanel {
-                New-HTMLTable -DataTable $Script:Reporting['Mailbox']['Data'][$Domain] -Filtering {
-
-                }
-            }
         }
     }
 }
