@@ -1,7 +1,12 @@
 ﻿function Invoke-ExchangeEssentials {
     [CmdletBinding()]
     param(
-        [string] $Type
+        [string] $FilePath,
+        [Parameter(Position = 0)][string[]] $Type,
+        [switch] $PassThru,
+        [switch] $HideHTML,
+        [switch] $Online,
+        [switch] $SplitReports
     )
     $Script:Reporting = [ordered] @{}
     $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ExchangeEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ExchangeEssentials'
