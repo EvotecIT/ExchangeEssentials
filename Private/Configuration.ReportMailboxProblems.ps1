@@ -2,7 +2,7 @@
     Name       = 'MailboxProblems'
     Enabled    = $true
     Execute    = {
-        Get-MyMailboxProblems
+        Get-MyMailboxProblems -Local
     }
     Processing = {
 
@@ -32,20 +32,20 @@
                         New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Both']['DuplicateAccount'] -Filtering
                     }
                 }
-                New-HTMLTab -Name 'Broken DisplayName' {
+                New-HTMLTab -Name 'No Database' {
+                    New-HTMLSection -HeaderText 'Exchange On-Premises - No Database' {
+                        New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['NoDatabase'] -Filtering
+                    }
+                }
+                New-HTMLTab -Name 'Inconsistent Data' {
                     New-HTMLSection -HeaderText 'Exchange Online - Broken DisplayName' {
                         New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Online']['BrokenDisplayName'] -Filtering
                     }
                     New-HTMLSection -HeaderText 'Exchange On-Premises - Broken DisplayName' {
                         New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['BrokenDisplayName'] -Filtering
                     }
-                }
-                New-HTMLTab -Name 'No Database' {
-                    # New-HTMLSection -HeaderText 'Exchange Online - No Database' {
-                    #     New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Online']['NoDatabase'] -Filtering
-                    # }
-                    New-HTMLSection -HeaderText 'Exchange On-Premises - No Database' {
-                        New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['NoDatabase'] -Filtering
+                    New-HTMLSection -HeaderText 'Exchange On-Premises - Missing UserPrincipalName' {
+                        New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['MissingUserPrincipalName'] -Filtering
                     }
                 }
                 New-HTMLTab -Name 'Contact Problems' {
@@ -60,11 +60,6 @@
                     }
                     New-HTMLSection -HeaderText 'Exchange On-Premises - Contact Missing ExternalEmail' {
                         New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['ContactMissingExternalEmail'] -Filtering
-                    }
-                }
-                New-HTMLTab -Name 'UserPrincipalName Missing' {
-                    New-HTMLSection -HeaderText 'Exchange On-Premises - Missing UserPrincipalName' {
-                        New-HTMLTable -DataTable $Script:Reporting['MailboxProblems']['Data']['Local']['MissingUserPrincipalName'] -Filtering
                     }
                 }
             }
