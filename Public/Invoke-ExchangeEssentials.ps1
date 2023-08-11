@@ -15,7 +15,8 @@
         ShowWarning = $ShowWarning.IsPresent
         HideSteps   = $HideSteps.IsPresent
     }
-    $NotSupported = foreach ($T in $Type) {
+    $Supported = [System.Collections.Generic.List[string]]::new()
+    [Array] $NotSupported = foreach ($T in $Type) {
         if ($T -notin $Script:ExchangeEssentialsConfiguration.Keys ) {
             $T
         } else {
