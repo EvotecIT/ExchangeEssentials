@@ -1,3 +1,4 @@
 ﻿Import-Module .\ExchangeEssentials.psd1 -Force
 
-Get-MyMailbox -Verbose
+$Test = Get-MyMailbox -Verbose -IncludeMailUsers
+$Test | Format-Table
