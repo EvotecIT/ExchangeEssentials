@@ -38,6 +38,7 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
         'Get-LocalMailContact'
         'Get-LocalRemoteDomain'
         'Get-ExoRecipientPermission'
+        'Get-MailUser'
     ) -IgnoreModuleName 'Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility', 'Microsoft.WSMan.Management', 'NetTCPIP'
 
     $ConfigurationFormat = [ordered] @{
@@ -110,7 +111,7 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
         }
         ArtefactName        = '<ModuleName>.v<ModuleVersion>.zip'
     }
-    New-ConfigurationArtefact @newConfigurationArtefactSplat
+    New-ConfigurationArtefact @newConfigurationArtefactSplat -CopyFilesRelative
 
     # global options for publishing to github/psgallery
     #New-ConfigurationPublish -Type PowerShellGallery -FilePath 'C:\Support\Important\PowerShellGalleryAPI.txt' -Enabled:$true
