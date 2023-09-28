@@ -42,7 +42,7 @@
                 $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
                 $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
                 $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
-                $CacheType[$Mailbox.Alias] = 'Local'
+                $CacheType[$Mailbox.Alias] = 'On-Premises Mailbox'
                 $Mailbox
             }
             #  $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
@@ -65,7 +65,7 @@
             $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
             $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
             $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
-            $CacheType[$Mailbox.Alias] = 'Online'
+            $CacheType[$Mailbox.Alias] = 'Online Mailbox'
             $Mailbox
         }
 
@@ -193,14 +193,14 @@
             Mailbox = $Mailbox
         }
         #$TimeLogPermissions = Start-TimeLog
-        if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+        if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
             try {
                 Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Local"
                 $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-LocalMailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
             }
-        } elseif ($CacheType[$Mailbox.Alias] -eq 'Online') {
+        } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
             try {
                 Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Online"
                 $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-MailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
@@ -210,14 +210,14 @@
         }
         #$TimeLogPermissionsEnd = Stop-TimeLog -Time $TimeLogPermissions
         #$TimeLogRecipient = Start-TimeLog
-        if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+        if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
             try {
                 Write-Verbose -Message "Get-MyMailbox - Getting MailboxADPermissions for $($Mailbox.Alias) - Local"
                 $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions = Get-MyMailboxSendAs -Identity $Mailbox.DistinguishedName #Get-LocalADPermission -Identity $Mailbox.Identity -ErrorAction Stop
             } catch {
                 Write-Warning -Message "Get-MyMailbox - Unable to get MailboxADPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
             }
-        } elseif ($CacheType[$Mailbox.Alias] -eq 'Online') {
+        } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
             if ($CacheRecipientPermissions[$Mailbox.Identity] -and $CacheRecipientPermissions[$Mailbox.Identity].Count -gt 0) {
                 $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions = $CacheRecipientPermissions[$Mailbox.Identity]
             }
@@ -231,16 +231,16 @@
         #$TimeLogRecipientEnd = Stop-TimeLog -Time $TimeLogRecipient
         #$TImeLogStats = Start-TimeLog
         if ($IncludeStatistics) {
-            if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+            if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                 $CacheMailbox[$Mailbox.Alias]['Statistics'] = Get-LocalMailboxStatistics -Identity $Mailbox.Alias
-            } elseif ($CacheType[$Mailbox.Alias] -eq 'Online') {
+            } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
                 $CacheMailbox[$Mailbox.Alias]['Statistics'] = Get-MailboxStatistics -Identity $Mailbox.Alias
             }
             if ($Mailbox.ArchiveDatabase) {
                 try {
-                    if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+                    if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                         $Archive = Get-LocalMailboxStatistics -Identity ($Mailbox.Guid).ToString() -Archive -Verbose:$false -ErrorAction Stop
-                    } elseif ($CacheType[$Mailbox.Alias] -eq 'Online') {
+                    } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
                         $Archive = Get-MailboxStatistics -Identity ($Mailbox.Guid).ToString() -Archive -Verbose:$false -ErrorAction Stop
                     }
                     $CacheMailbox[$Mailbox.Alias]['StatisticsArchive'] = $Archive
@@ -254,10 +254,10 @@
         foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxPermissions) {
             if ($Permission.Deny -eq $false) {
                 if ($Permission.User -ne 'NT AUTHORITY\SELF') {
-                    if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+                    if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                         $UserSplit = $Permission.User.Split("\")
                         $CurrentUser = $UserSplit[1]
-                    } elseif ($CacheType[$Mailbox.Alias] -eq 'Online') {
+                    } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
                         $CurrentUser = $CacheNames[$Permission.User]
                     }
                     if ($CurrentUser) {
@@ -280,7 +280,7 @@
             }
         }
         foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions) {
-            if ($CacheType[$Mailbox.Alias] -eq 'Local') {
+            if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                 if ($Permission.Deny -eq $false -and $Permission.Inherited -eq $false) {
                     if ($Permission.User -ne 'NT AUTHORITY\SELF') {
                         $UserSplit = $Permission.User.Split("\")
