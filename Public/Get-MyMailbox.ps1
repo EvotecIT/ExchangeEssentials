@@ -51,7 +51,7 @@
         Write-Verbose -Message 'Get-MyMailbox - Getting Mailboxes (Online)'
         $TimeLog = Start-TimeLog
         try {
-            $OnlineMailboxes = Get-EXOMailbox -Properties GrantSendOnBehalfTo, ForwardingSmtpAddress, RecipientTypeDetails, SamAccountName, WhenCreated, WhenMailboxCreated, HiddenFromAddressListsEnabled, ForwardingAddress -ResultSize unlimited -ErrorAction Stop -Verbose:$false
+            $OnlineMailboxes = Get-EXOMailbox -Properties GrantSendOnBehalfTo, ForwardingSmtpAddress, RecipientTypeDetails, SamAccountName, WhenCreated, WhenMailboxCreated, HiddenFromAddressListsEnabled, ForwardingAddress, AccountDisabled -ResultSize unlimited -ErrorAction Stop -Verbose:$false
             $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
             Write-Verbose -Message "Get-MyMailbox - Getting Mailboxes (Online) took $($EndTimeLog) seconds"
         } catch {
@@ -416,7 +416,7 @@
                 DisplayName                   = $Mailbox.DisplayName
                 Alias                         = $Mailbox.Alias
                 UserPrincipalName             = $Mailbox.UserPrincipalName
-                Enabled                       = -not $Mailbox.AccountDisabled
+                Enabled                       = if ($Mailbox.AccountDisabled -eq $true) { $false } elseif ($Mailbox.AccountDisabled -eq $false) { $true } else { $null }
                 Type                          = $Type
                 TypeDetails                   = $Mailbox.RecipientTypeDetails
                 PrimarySmtpAddress            = $Mailbox.PrimarySmtpAddress
@@ -441,7 +441,7 @@
                 DisplayName                   = $Mailbox.DisplayName
                 Alias                         = $Mailbox.Alias
                 UserPrincipalName             = $Mailbox.UserPrincipalName
-                Enabled                       = -not $Mailbox.AccountDisabled
+                Enabled                       = if ($Mailbox.AccountDisabled -eq $true) { $false } elseif ($Mailbox.AccountDisabled -eq $false) { $true } else { $null }
                 Type                          = $Type
                 TypeDetails                   = $Mailbox.RecipientTypeDetails
                 PrimarySmtpAddress            = $Mailbox.PrimarySmtpAddress
