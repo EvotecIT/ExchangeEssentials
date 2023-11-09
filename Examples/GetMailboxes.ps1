@@ -1,4 +1,7 @@
 ﻿Import-Module .\ExchangeEssentials.psd1 -Force
 
-$Test = Get-MyMailbox -Verbose -IncludeMailUsers
+#Connect-ExchangeOnline
+
+$Test = Get-MyMailbox -Verbose -IncludeMailUsers -SkipPermissions
 $Test | Format-Table
+$Test | Out-HtmlView -ScrollX -Filtering
