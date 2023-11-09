@@ -9,7 +9,7 @@
     DotNetFrameworkVersion = '4.5.2'
     FunctionsToExport      = @('Get-MyMailbox', 'Get-MyMailboxProblems', 'Invoke-ExchangeEssentials')
     GUID                   = '0dd82757-4cac-4772-9821-1c8ccaebe50d'
-    ModuleVersion          = '0.8.0'
+    ModuleVersion          = '0.9.0'
     PowerShellVersion      = '5.1'
     PrivateData            = @{
         PSData = @{
