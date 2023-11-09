@@ -351,58 +351,85 @@
     foreach ($Mailbox in $FilterdMailboxes) {
         $Count++
         Write-Verbose -Message "Processing Mailbox $Count/$($FilterdMailboxes.Count) - $($Mailbox.Alias) / $($Mailbox.UserPrincipalName) / $($Mailbox.DisplayName)"
+        # lets reset the variables
+        $ForwardAddress = $null
+        $IsForward = $false
+        $ForwardingType = $null
+        $ForwardingStatus = $null
         # establish forwarding status
-        if ($Mailbox.ForwardingAddress) {
-            $Contact = $CacheContacts[$Mailbox.ForwardingAddress]
-            $ContactLocal = $CacheContactsLocal[$Mailbox.ForwardingAddress]
-            if ($Contact) {
-                $ForwardAddress = Convert-ExchangeEmail -Emails $Contact.ExternalEmailAddress -RemovePrefix
-                if ($ForwardAddress) {
-                    $IsForward = $true
-                } else {
-                    $IsForward = $false
+        if ($Mailbox.RecipientType -eq 'MailUser') {
+            if ($Mailbox.ExternalEmailAddress) {
+                # the assumption is that the ExternalEmailAddress is the forwarding address, when there are more than 1 email addresses on mailuser
+                if ($Mailbox.EmailAddresseses.Count -gt 1) {
+                    $ForwardAddress = Convert-ExchangeEmail -Emails $Mailbox.EmailAddresses -RemovePrefix
+                    if ($ForwardAddress) {
+                        $IsForward = $true
+                        $ForwardingType = 'MailUserForward'
+                        $ForwardingStatus = 'External'
+                    }
                 }
-            } elseif ($ContactLocal) {
-                $ForwardAddress = Convert-ExchangeEmail -Emails $ContactLocal.ExternalEmailAddress -RemovePrefix
-                if ($ForwardAddress) {
-                    $IsForward = $true
-                } else {
-                    $IsForward = $false
-                }
-            } else {
-                $ForwardAddress = $Mailbox.ForwardingAddress
-                $IsForward = $true
             }
-            $ForwardingType = 'Contact'
-        } elseif ($Mailbox.ForwardingSmtpAddress) {
-            $ForwardAddress = Convert-ExchangeEmail -Emails $Mailbox.ForwardingSmtpAddress -RemovePrefix
-            if ($ForwardAddress) {
-                $IsForward = $true
-            } else {
-                # this shouldn't happen
-                $IsForward = 'Unknown'
+            if (-not $ForwardAddress) {
+                $ForwardAddress = $null
+                $IsForward = $false
+                $ForwardingType = 'None'
+                $ForwardingStatus = 'None'
             }
-            $ForwardingType = 'SmtpAddress'
         } else {
-            $ForwardAddress = $null
-            $IsForward = $false
-            $ForwardingType = 'None'
+            if ($Mailbox.ForwardingAddress) {
+                $Contact = $CacheContacts[$Mailbox.ForwardingAddress]
+                $ContactLocal = $CacheContactsLocal[$Mailbox.ForwardingAddress]
+                if ($Contact) {
+                    $ForwardAddress = Convert-ExchangeEmail -Emails $Contact.ExternalEmailAddress -RemovePrefix
+                    if ($ForwardAddress) {
+                        $IsForward = $true
+                    } else {
+                        $IsForward = $false
+                    }
+                } elseif ($ContactLocal) {
+                    $ForwardAddress = Convert-ExchangeEmail -Emails $ContactLocal.ExternalEmailAddress -RemovePrefix
+                    if ($ForwardAddress) {
+                        $IsForward = $true
+                    } else {
+                        $IsForward = $false
+                    }
+                } else {
+                    $ForwardAddress = $Mailbox.ForwardingAddress
+                    $IsForward = $true
+                }
+                $ForwardingType = 'ContactForward'
+            } elseif ($Mailbox.ForwardingSmtpAddress) {
+                $ForwardAddress = Convert-ExchangeEmail -Emails $Mailbox.ForwardingSmtpAddress -RemovePrefix
+                if ($ForwardAddress) {
+                    $IsForward = $true
+                } else {
+                    # this shouldn't happen
+                    $IsForward = 'Unknown'
+                }
+                $ForwardingType = 'MailboxForward'
+            } else {
+                $ForwardAddress = $null
+                $IsForward = $false
+                $ForwardingType = 'None'
+            }
         }
-        if ($ForwardAddress) {
-            if ($ForwardAddress -like "*@*") {
-                $SplitAddress = $ForwardAddress -split "@"
-                $DomainName = $SplitAddress[1]
-                $DomainName = $DomainName.Trim()
-                if ($CacheRemoteDomains[$DomainName]) {
-                    $ForwardingStatus = "Internal"
+        if (-not $ForwardingStatus) {
+            if ($ForwardAddress) {
+                if ($ForwardAddress -like "*@*") {
+                    $SplitAddress = $ForwardAddress -split "@"
+                    $DomainName = $SplitAddress[1]
+                    $DomainName = $DomainName.Trim()
+                    if ($CacheRemoteDomains[$DomainName]) {
+                        $ForwardingStatus = "Internal"
+                    } else {
+                        $ForwardingStatus = "External"
+                    }
                 } else {
-                    $ForwardingStatus = "External"
+                    $ForwardingStatus = "Unknown"
                 }
             } else {
-                $ForwardingStatus = "Unknown"
+                $ForwardingStatus = 'None'
             }
-        } else {
-            $ForwardingStatus = 'None'
         }
 
         $Type = if ($CacheType[$Mailbox.Alias]) {
