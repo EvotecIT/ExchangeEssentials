@@ -360,8 +360,14 @@
         if ($Mailbox.RecipientType -eq 'MailUser') {
             if ($Mailbox.ExternalEmailAddress) {
                 # the assumption is that the ExternalEmailAddress is the forwarding address, when there are more than 1 email addresses on mailuser
-                if ($Mailbox.EmailAddresseses.Count -gt 1) {
-                    $ForwardAddress = Convert-ExchangeEmail -Emails $Mailbox.EmailAddresses -RemovePrefix
+                $Counter = 0
+                foreach ($Email in $Mailbox.EmailAddresses) {
+                    if ($Email.StartsWith('smtp:',$true, $null)) {
+                        $Counter++
+                    }
+                }
+                if ($Counter -gt 1) {
+                    $ForwardAddress = Convert-ExchangeEmail -Emails $Mailbox.ExternalEmailAddress -RemovePrefix
                     if ($ForwardAddress) {
                         $IsForward = $true
                         $ForwardingType = 'MailUserForward'
