@@ -31,7 +31,7 @@
     process {
         if ($ADUser) {
             if (-not $ADUser.NtsecurityDescriptor) {
-                Write-Warning -Message "Get-MyMailboxSendAs - Identity $($ADUser.SamAccountName) does not have ntSecurityDescriptor attribute. Please provide one or use Identity parameter."
+                Write-Warning -Message "Get-MyMailboxSendAs - Identity '$($ADUser.SamAccountName)' does not have ntSecurityDescriptor attribute. Please provide one or use Identity parameter."
                 return
             }
         } else {

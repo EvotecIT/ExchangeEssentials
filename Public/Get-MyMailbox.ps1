@@ -6,7 +6,8 @@
         [switch] $IncludeMailUsers,
         [switch] $Local,
         [int] $LimitProcessing,
-        [switch] $SkipPermissions
+        [switch] $SkipPermissions,
+        [switch] $ExpandGroupMembership
     )
 
     $ReversedPermissions = [ordered] @{}
@@ -51,7 +52,16 @@
         Write-Verbose -Message 'Get-MyMailbox - Getting Mailboxes (Online)'
         $TimeLog = Start-TimeLog
         try {
-            $OnlineMailboxes = Get-EXOMailbox -Properties GrantSendOnBehalfTo, ForwardingSmtpAddress, RecipientTypeDetails, SamAccountName, WhenCreated, WhenMailboxCreated, HiddenFromAddressListsEnabled, ForwardingAddress, AccountDisabled -ResultSize unlimited -ErrorAction Stop -Verbose:$false
+            $getEXOMailboxSplat = @{
+                Properties  = 'GrantSendOnBehalfTo', 'ForwardingSmtpAddress', 'RecipientTypeDetails', 'SamAccountName', 'WhenCreated', 'WhenMailboxCreated', 'HiddenFromAddressListsEnabled', 'ForwardingAddress', 'AccountDisabled'
+                ResultSize  = 'unlimited'
+                ErrorAction = 'Stop'
+            }
+            #if ($Identity) {
+            #    $getEXOMailboxSplat.Identity = $Identity
+            #}
+
+            $OnlineMailboxes = Get-EXOMailbox @getEXOMailboxSplat
             $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
             Write-Verbose -Message "Get-MyMailbox - Getting Mailboxes (Online) took $($EndTimeLog) seconds"
         } catch {
@@ -67,11 +77,18 @@
             $CacheType[$Mailbox.Alias] = 'Online Mailbox'
             $Mailbox
         }
-        if ($IncludeMailUsers) {
+        if ($IncludeMailUsers -and -not $Identity) {
             Write-Verbose -Message 'Get-MyMailbox - Getting MailUsers (Online)'
             $TimeLog = Start-TimeLog
             try {
-                $MailUsersOnline = Get-MailUser -ResultSize unlimited -ErrorAction Stop -Verbose:$false
+                $getMailUserSplat = @{
+                    ResultSize  = 'unlimited'
+                    ErrorAction = 'Stop'
+                }
+                #if ($Identity) {
+                #    $getMailUserSplat.Identity = $Identity
+                #}
+                $MailUsersOnline = Get-MailUser @getMailUserSplat
                 foreach ($M in $MailUsersOnline) {
                     if ($M.WindowsEmailAddress) {
                         if (-not $CacheExternalEmails[$M.WindowsEmailAddress]) {
@@ -147,7 +164,22 @@
             if (-not $CacheRecipientPermissions[$RecipientPermission.Identity]) {
                 $CacheRecipientPermissions[$RecipientPermission.Identity] = [System.Collections.Generic.List[PSCustomobject]]::new()
             }
-            $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
+            if ($ExpandGroupMembership) {
+                if ($RecipientPermission.Trustee -like "*@*") {
+                    $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
+                } else {
+                    $GroupMembers = Get-ExchangeMembersRecursive -Identity $RecipientPermission.Trustee -ErrorAction SilentlyContinue -Verbose:$false -AccessRights SendAs -Local:$false
+                    if ($GroupMembers) {
+                        foreach ($Member in $GroupMembers) {
+                            $CacheRecipientPermissions[$RecipientPermission.Identity].Add($Member)
+                        }
+                    } else {
+                        $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
+                    }
+                }
+            } else {
+                $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
+            }
         }
     }
     if ($IncludeCAS) {
@@ -197,14 +229,16 @@
             if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                 try {
                     Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Local"
-                    $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-LocalMailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
+                    #$CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-LocalMailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
+                    $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-ExchangeMailboxPermission -Local -ReversedPermissions $ReversedPermissions -CacheType $CacheType -Mailbox $Mailbox -ExpandGroupMembership:$ExpandGroupMembership.IsPresent
                 } catch {
                     Write-Warning -Message "Get-MyMailbox - Unable to get MailboxPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
                 }
             } elseif ($CacheType[$Mailbox.Alias] -eq 'Online Mailbox') {
                 try {
                     Write-Verbose -Message "Get-MyMailbox - Getting MailboxPermissions for $($Mailbox.Alias) - Online"
-                    $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-MailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
+                    #$CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-MailboxPermission -Identity $Mailbox.Alias -ErrorAction Stop -Verbose:$false
+                    $CacheMailbox[$Mailbox.Alias].MailboxPermissions = Get-ExchangeMailboxPermission -ReversedPermissions $ReversedPermissions -CacheType $CacheType -Mailbox $Mailbox -ExpandGroupMembership:$ExpandGroupMembership.IsPresent
                 } catch {
                     Write-Warning -Message "Get-MyMailbox - Unable to get MailboxPermissions for $($Mailbox.Alias). Error: $($_.Exception.Message.Replace("`r`n", " "))"
                 }
@@ -240,6 +274,7 @@
                     }
                 }
             }
+            <#
             foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxPermissions) {
                 if ($Permission.Deny -eq $false) {
                     if ($Permission.User -ne 'NT AUTHORITY\SELF') {
@@ -268,6 +303,8 @@
                     }
                 }
             }
+            #>
+            # Process SendAs permissions into ReversedPermissions
             foreach ($Permission in $CacheMailbox[$Mailbox.Alias].MailboxRecipientPermissions) {
                 if ($CacheType[$Mailbox.Alias] -eq 'On-Premises Mailbox') {
                     if ($Permission.Deny -eq $false -and $Permission.Inherited -eq $false) {
@@ -316,6 +353,7 @@
                     }
                 }
             }
+            # Process SendOnBehalf permissions into ReversedPermissions
             foreach ($Permission in $CacheMailbox[$Mailbox.Alias].Mailbox.GrantSendOnBehalfTo) {
                 $CurrentUser = $CacheNames[$Permission]
                 if ($CurrentUser) {
@@ -362,7 +400,7 @@
                 # the assumption is that the ExternalEmailAddress is the forwarding address, when there are more than 1 email addresses on mailuser
                 $Counter = 0
                 foreach ($Email in $Mailbox.EmailAddresses) {
-                    if ($Email.StartsWith('smtp:',$true, $null)) {
+                    if ($Email.StartsWith('smtp:', $true, $null)) {
                         $Counter++
                     }
                 }
