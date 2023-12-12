@@ -19,7 +19,8 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type RequiredModule -Name 'ExchangeOnlineManagement', 'PSWriteHTML' -Version Latest -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'ExchangeOnlineManagement' -Version Latest -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version '1.12.0' -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword'
     New-ConfigurationModule -Type ExternalModule -Name 'ActiveDirectory'
     New-ConfigurationModuleSkip -IgnoreFunctionName @(
@@ -39,6 +40,10 @@ Invoke-ModuleBuild -ModuleName 'ExchangeEssentials' {
         'Get-LocalRemoteDomain'
         'Get-ExoRecipientPermission'
         'Get-MailUser'
+        'Get-DynamicDistributionGroupMember'
+        'Get-DistributionGroupMember'
+        'Get-LocalDynamicDistributionGroupMember'
+        'Get-LocalDistributionGroupMember'
     ) -IgnoreModuleName 'Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility', 'Microsoft.WSMan.Management', 'NetTCPIP'
 
     $ConfigurationFormat = [ordered] @{
