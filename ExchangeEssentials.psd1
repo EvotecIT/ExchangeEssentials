@@ -1,5 +1,5 @@
 ﻿@{
-    AliasesToExport        = @()
+    AliasesToExport        = @('Get-ExchangeMembersRecursive', 'Get-MyMailboxMembersRecursive')
     Author                 = 'Przemyslaw Klys'
     CmdletsToExport        = @()
     CompanyName            = 'Evotec'
@@ -7,9 +7,9 @@
     Copyright              = '(c) 2011 - 2023 Przemyslaw Klys @ Evotec. All rights reserved.'
     Description            = 'ExchangeEssentials'
     DotNetFrameworkVersion = '4.5.2'
-    FunctionsToExport      = @('Get-MyMailbox', 'Get-MyMailboxProblems', 'Invoke-ExchangeEssentials')
+    FunctionsToExport      = @('Get-MyMailbox', 'Get-MyMailboxMembers', 'Get-MyMailboxProblems', 'Invoke-ExchangeEssentials')
     GUID                   = '0dd82757-4cac-4772-9821-1c8ccaebe50d'
-    ModuleVersion          = '0.10.0'
+    ModuleVersion          = '0.18.0'
     PowerShellVersion      = '5.1'
     PrivateData            = @{
         PSData = @{
