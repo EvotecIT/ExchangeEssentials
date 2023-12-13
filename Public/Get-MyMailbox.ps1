@@ -44,7 +44,12 @@
                 $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
                 $CacheType[$Mailbox.Alias] = 'On-Premises Mailbox'
                 if ($Mailbox.PrimarySmtpAddress) {
+                    $CacheNames[$Mailbox.PrimarySmtpAddress] = $Mailbox.Alias
                     $CacheExternalEmails[$Mailbox.PrimarySmtpAddress] = $Mailbox.Alias
+                }
+                if ($Mailbox.WindowsLiveID) {
+                    $CacheNames[$Mailbox.WindowsLiveID] = $Mailbox.Alias
+                    $CacheExternalEmails[$Mailbox.WindowsLiveID] = $Mailbox.Alias
                 }
                 $Mailbox
             }
@@ -57,11 +62,7 @@
                 ResultSize  = 'unlimited'
                 ErrorAction = 'Stop'
             }
-            #if ($Identity) {
-            #    $getEXOMailboxSplat.Identity = $Identity
-            #}
-
-            $OnlineMailboxes = Get-EXOMailbox @getEXOMailboxSplat
+            $OnlineMailboxes = Get-EXOMailbox @getEXOMailboxSplat -Verbose:$false
             $EndTimeLog = Stop-TimeLog -Time $TimeLog -Option OneLiner
             Write-Verbose -Message "Get-MyMailbox - Getting Mailboxes (Online) took $($EndTimeLog) seconds"
         } catch {
@@ -73,6 +74,14 @@
         foreach ($Mailbox in $OnlineMailboxes) {
             $CacheNames[$Mailbox.UserPrincipalName] = $Mailbox.Alias
             $CacheNames[$Mailbox.Identity] = $Mailbox.Alias
+            if ($Mailbox.PrimarySmtpAddress) {
+                $CacheNames[$Mailbox.PrimarySmtpAddress] = $Mailbox.Alias
+                $CacheExternalEmails[$Mailbox.PrimarySmtpAddress] = $Mailbox.Alias
+            }
+            if ($Mailbox.WindowsLiveID) {
+                $CacheNames[$Mailbox.WindowsLiveID] = $Mailbox.Alias
+                $CacheExternalEmails[$Mailbox.WindowsLiveID] = $Mailbox.Alias
+            }
             $CacheNames[$Mailbox.Alias] = $Mailbox.Alias
             $CacheType[$Mailbox.Alias] = 'Online Mailbox'
             $Mailbox
@@ -90,8 +99,21 @@
                 #}
                 $MailUsersOnline = Get-MailUser @getMailUserSplat
                 foreach ($M in $MailUsersOnline) {
-                    if ($M.WindowsEmailAddress) {
-                        if (-not $CacheExternalEmails[$M.WindowsEmailAddress]) {
+                    if ($M.WindowsEmailAddress -or $M.PrimarySmtpAddress) {
+                        if (-not $CacheExternalEmails[$M.WindowsEmailAddress] -and -not $CacheExternalEmails[$M.PrimarySmtpAddress]) {
+                            if (-not $CacheExternalEmails[$M.WindowsEmailAddress]) {
+                                $CacheExternalEmails[$M.WindowsEmailAddress] = $M.Alias
+                            }
+                            if (-not $CacheExternalEmails[$M.PrimarySmtpAddress]) {
+                                $CacheExternalEmails[$M.PrimarySmtpAddress] = $M.Alias
+                            }
+                            if ($M.PrimarySmtpAddress) {
+                                $CacheNames[$M.PrimarySmtpAddress] = $M.Alias
+                            }
+                            if ($M.WindowsLiveID) {
+                                $CacheNames[$M.WindowsLiveID] = $M.Alias
+                            }
+                            $CacheNames[$M.PrimarySmtpAddress] = $M.Alias
                             $CacheNames[$M.UserPrincipalName] = $M.Alias
                             $CacheNames[$M.Identity] = $M.Alias
                             $CacheNames[$M.Alias] = $M.Alias
@@ -168,13 +190,16 @@
                 if ($RecipientPermission.Trustee -like "*@*") {
                     $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
                 } else {
-                    $GroupMembers = Get-ExchangeMembersRecursive -Identity $RecipientPermission.Trustee -ErrorAction SilentlyContinue -Verbose:$false -AccessRights SendAs -Local:$false
-                    if ($GroupMembers) {
-                        foreach ($Member in $GroupMembers) {
-                            $CacheRecipientPermissions[$RecipientPermission.Identity].Add($Member)
+                    if ($RecipientPermission.Trustee) {
+                        $GroupMembers = Get-MyMailboxMembers -Identity $RecipientPermission.Trustee -ErrorAction SilentlyContinue -Verbose:$false -Local:$false | ConvertTo-ExchangeAccessRights -AccessRights SendAs -Identity $RecipientPermission.Identity
+                        if ($GroupMembers) {
+                            foreach ($Member in $GroupMembers) {
+                                #Write-Verbose -Message "Get-MyMailbox - Expanding group and adding Member $($Member.Trustee) to $($RecipientPermission.Identity)"
+                                $CacheRecipientPermissions[$RecipientPermission.Identity].Add($Member)
+                            }
+                        } else {
+                            $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
                         }
-                    } else {
-                        $CacheRecipientPermissions[$RecipientPermission.Identity].Add($RecipientPermission)
                     }
                 }
             } else {
